@@ -20,7 +20,10 @@ var gen = new WAGenerator();
 var player = new WAPlayer(gen);
 
 if (document.addEventListener) {
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", setup);
+}
+
+function setup() {
     var url = location.search.substr(1).split("&")[0];
     url = (url?url:"akatomb.mid");
 //
@@ -33,7 +36,7 @@ if (document.addEventListener) {
                smf.input(xhr.response);
                console.debug(smf);
                var nChannel = smf.maxChannel + 1;
-               var nMultiplex = 4;
+               var nMultiplex = 3;
                gen.setup(nChannel, nMultiplex);
                player.input(smf);
 //
@@ -44,7 +47,6 @@ if (document.addEventListener) {
     xhr.overrideMimeType('text/plain; charset=x-user-defined');
     xhr.responseType = 'arraybuffer';
     xhr.send(null);
-})
 }
 
 function start() {
@@ -52,9 +54,10 @@ function start() {
     gen.ready();
     player.play();
 }
+
 function stop() {
     console.debug("function stop()");
-    gen.stop();
+    player.stop();
 }
 
 </script>
