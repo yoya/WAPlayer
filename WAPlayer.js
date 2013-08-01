@@ -4,6 +4,7 @@
         this.gen = gen;
         this.smf = null;
         this.sequence = [];
+        this.audioctx = new webkitAudioContext();
     }
     WAPlayer.prototype = {
         input: function(smf) {
@@ -14,13 +15,12 @@
             var tracks = this.smf.tracks;
             var gen = this.gen;
             var tempo = 0.5; // = 120
+            var division = header.division;
             var startTime = gen.audioctx.currentTime;
             for (var i = 0, n = tracks.length; i < n ; i++) {
 //                console.debug("### Track:"+i);
                 var track = tracks[i];
-                var division = header.division;
                 var targetTime = startTime;
-                var endOfTrack = null;
                 for (var j = 0, m = track.length; j < m ; j++) {
                     var chunk = track[j];
 //                    console.log(chunk);
