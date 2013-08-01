@@ -1,0 +1,64 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title> SMF Test </title>
+</head>
+
+<body>
+<h1></h1>
+
+<button id="startbutton" onClick ="start()"> start </button>
+<button id="stopbutton" onClick ="stop()"> stop </button>
+
+<script type="text/javascript" src="bin.js"> </script>
+<script type="text/javascript" src="SMF.js"> </script>
+<script type="text/javascript" src="WAPlayer.js"> </script>
+<script type="text/javascript" src="WAGenerator.js"> </script>
+<script type="text/javascript">
+var gen = new WAGenerator();
+var player = new WAPlayer(gen);
+
+if (document.addEventListener) {
+    document.addEventListener("DOMContentLoaded", function() {
+    var url = location.search.substr(1).split("&")[0];
+    url = (url?url:"akatomb.mid");
+//
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState > 3) {
+            if (xhr.status == 200) {
+               console.debug("midi loading done:"+xhr.response.byteLength);
+               var smf = new SMF();
+               smf.input(xhr.response);
+               console.debug(smf);
+               var nChannel = smf.maxChannel + 1;
+               var nMultiplex = 4;
+               gen.setup(nChannel, nMultiplex);
+               player.input(smf);
+//
+            }
+        }
+    };
+    xhr.open('GET', url);
+    xhr.overrideMimeType('text/plain; charset=x-user-defined');
+    xhr.responseType = 'arraybuffer';
+    xhr.send(null);
+})
+}
+
+function start() {
+    console.debug("function start()");
+    gen.ready();
+    player.play();
+}
+function stop() {
+    console.debug("function stop()");
+    gen.stop();
+}
+
+</script>
+
+<hr>
+<address></address>
+</body> </html>
