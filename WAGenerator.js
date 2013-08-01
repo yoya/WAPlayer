@@ -1,5 +1,15 @@
 "use strict";
 (function() {
+    var WAGeneratorProgramTable = {
+        46:0, // pizzicato strings => sine
+        47:0, // harp => sine
+        57:1, // trunpet => square
+        58:1, // trumbone => square
+        60:1, // muted trunpet => square
+        68:3, // oboe => triangle
+        73:3, // flute => triangle
+        88:2, // base = sawtooth
+    }
     var WAGenerator = function() {
         this.audioctx = new webkitAudioContext();
         this.oscTable = [];
@@ -11,6 +21,8 @@
         this.musicScaleTable = [];
         this.noteOnKeyTable = [];
         this.noteOnGainTable = [];
+        this.gainScale = 1.0
+        this.gain2Scale = 1.0;
     }
     WAGenerator.prototype = {
         setup: function(nChannel, nMultiplex) {
@@ -42,7 +54,8 @@
 //            this.osc3Table = new Array(nChannel);
             this.gainTable = new Array(nChannel);
             this.gain2 = audioctx.createGainNode();
-            this.gain2.gain.value = 0.5;
+            this.gain2.gain.value = this.gain2Scale;
+            this.gainScale = 1/Math.sqrt(nChannel);
             for (var i = 0 ; i < nChannel ; i++) {
 //                var osc2 = audioctx.createOscillator();
 //                var osc3 = audioctx.createOscillator();
@@ -87,8 +100,17 @@
             }
         },
         // method
-        programChange: function(channel, program) {
-            ;
+        changeProgram: function(channel, program) {
+
+            if (program in WAGeneratorProgramTable) {
+                var type = WAGeneratorProgramTable[program];
+                console.log("type:"+type);
+                for (var i = 0 ; i < this.nMultiplex ; i++) {
+                    this.oscTable[channel][i].type = type;
+                }
+            } else {
+                console.log("programChange: "+channel+", "+program+")");
+            }
         },
         noteOn2: function(targetTime, channel, i, key, velocity) {
             var noteOnTableChannel = this.noteOnTable[channel];

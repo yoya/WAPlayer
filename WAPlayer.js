@@ -36,6 +36,9 @@
                     case 0x9: // Note On
                         gen.noteOn(targetTime, chunk['channel'], chunk['note'], chunk['velocity']);
                         break;
+                    case 0xC: // program change
+                        gen.changeProgram(chunk['channel'], chunk['program']);
+                        break;
                     case 0xF: // meta event | sysex
                         var type2 = chunk['type2'];
                         if (type2 == 0xF) {
