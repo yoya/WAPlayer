@@ -198,10 +198,9 @@
             for (var channel = 0 ; i < this.nChannel ; channel++) {
                 var noteOnTableChannel = this.noteOnTable[channel];
                 for (var i = 0 ; i < this.nMultiplex ; i++) {
-                    if (noteOnTableChannel[i] === key) {
+                    if (noteOnTableChannel[i] !== null) {
                         noteOnTableChannel[i] = null;
-                        this.gainTable[channel][i].gain.setValueAtTime(this.noteOnGainTable[channel][i], targetTime);
-                        this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime + 1);
+                        this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime);
                     }
                 }
             }
