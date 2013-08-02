@@ -71,7 +71,7 @@
                         chunk['note'] = bin.getUI8();
                         chunk['amount'] = bin.getUI8();
                         break;
-                    case 0xB: // Controller
+                    case 0xB: // Control Change
                         chunk['controller'] = bin.getUI8();
                         chunk['value'] = bin.getUI8();
                         break;
@@ -84,7 +84,8 @@
                     case 0xE: // Pitch Bend Event
                         var value1 = bin.getUI8();
                         var value2 = bin.getUI8();
-                        chunk['value'] =  ((value2 & 0x7f) << 7) + (value1 & 0x7f);
+                        var value =  ((value2 & 0x7f) << 7) + (value1 & 0x7f);
+                        chunk['value'] = value - 0x2000;
                         break;
 
                     }
