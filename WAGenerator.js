@@ -24,6 +24,7 @@
         this.gain2 = null;
         this.noteOnTable = [];
         this.musicScaleTable = [];
+        this.pitchBendTable = [];
         this.noteOnKeyTable = [];
         this.noteOnGainTable = [];
         this.gainScale = 1.0
@@ -37,6 +38,7 @@
             var noteOnTable = new Array(nChannel);
             var noteOnKeyTable = new Array(nChannel);
             var noteOnGainTable = new Array(nChannel);
+            var pitchBendTable = new Float32Array(nChannel);
             for (var i = 0 ; i < nChannel ; i++) {
                 noteOnTable[i] = new Array(nMultiplex);
                 noteOnKeyTable[i] = new Array(nMultiplex);
@@ -46,10 +48,12 @@
                     noteOnKeyTable[i][j] = 0;
                     noteOnGainTable[i][j] = 0;
                 }
+                pitchBendTable[i] = 1.0;
             }
             this.noteOnTable = noteOnTable;
             this.noteOnKeyTable = noteOnKeyTable;
             this.noteOnGainTable = noteOnGainTable;
+            this.pitchBendTable = pitchBendTable;
             this.makeMusicScale();
         },
         connectNode: function(nChannel, nMultiplex) {
@@ -117,12 +121,26 @@
                 console.log("programChange: "+channel+", "+program+")");
             }
         },
+        pitchBend: function(targetTime, channel, value) {
+            var noteOnTableChannel = this.noteOnTable[channel];
+            var bend = Math.pow(2, (value/0x2000)/12);
+            this.pitchBendTable[channel] = bend;
+            for (var i = 0 ; i < this.nMultiplex ; i++) {
+                if (noteOnTableChannel[i] !== null) {
+                    var key = this.noteOnKeyTable[channel][i];
+                    var freq = this.musicScaleTable[key];
+                    freq *= bend;
+                    this.oscTable[channel][i].frequency.setValueAtTime(freq, targetTime);
+                }
+            }
+        },
         noteOn2: function(targetTime, channel, i, key, velocity) {
             var noteOnTableChannel = this.noteOnTable[channel];
-            var freq = this.musicScaleTable[key];
+            var bend = this.pitchBendTable[channel];
+            var freq = this.musicScaleTable[key] * bend;
             var gain = velocity/0x100 * this.gainScale;
             var prevKey = this.noteOnKeyTable[channel][i]
-            var prevFreq = this.musicScaleTable[prevKey];
+            var prevFreq = this.musicScaleTable[prevKey] * bend;
             noteOnTableChannel[i] = key;
             if (prevFreq) {
                 this.oscTable[channel][i].frequency.setValueAtTime(prevFreq, targetTime-0.01);

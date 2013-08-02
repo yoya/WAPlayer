@@ -63,6 +63,9 @@
                 case 0xC: // Program Change
                     gen.changeProgram(chunk['channel'], chunk['program']);
                     break;
+                case 0xE: // Pitch Bend Event
+                    gen.pitchBend(targetTime, chunk['channel'], chunk['value']);
+                    break;
                 case 0xF: // meta event | sysex
                     var type2 = chunk['type2'];
                     if (type2 == 0xF) {
