@@ -6,14 +6,15 @@
 */
 (function() {
     var WAGeneratorProgramTable = {
-        46:0, // pizzicato strings => sine
-        47:0, // harp => sine
-        57:1, // trunpet => square
-        58:1, // trumbone => square
-        60:1, // muted trunpet => square
-        68:3, // oboe => triangle
-        73:3, // flute => triangle
-        88:2, // base = sawtooth
+        // type: 0:sine, 1:square, 2:sawtoosh, 3:triangle
+        46:{type:0, gain:1.0, decay:10}, // pizzicato strings
+        47:{type:0, gain:1.0, decay:1}, // harp
+        57:{type:1, gain:0.3, decay:0}, // trunpet
+        58:{type:1, gain:0.3, decay:0}, // trumbone
+        60:{type:1, gain:0.3, decay:0}, // muted trunpet
+        68:{type:3, gain:0.9, decay:0}, // oboe
+        73:{type:3, gain:0.8, decay:0}, // flute
+        88:{type:2, gain:0.5, decay:0}, // base
     }
     var WAGenerator = function() {
         this.audioctx = new webkitAudioContext();
@@ -27,6 +28,7 @@
         this.pitchBendTable = [];
         this.noteOnKeyTable = [];
         this.noteOnGainTable = [];
+        this.channelGainTable = [];
         this.gainScale = 1.0
         this.gain2Scale = 1.0;
     }
@@ -39,6 +41,7 @@
             var noteOnKeyTable = new Array(nChannel);
             var noteOnGainTable = new Array(nChannel);
             var pitchBendTable = new Float32Array(nChannel);
+            var channelGainTable = new Float32Array(nChannel);
             for (var i = 0 ; i < nChannel ; i++) {
                 noteOnTable[i] = new Array(nMultiplex);
                 noteOnKeyTable[i] = new Array(nMultiplex);
@@ -49,11 +52,13 @@
                     noteOnGainTable[i][j] = 0;
                 }
                 pitchBendTable[i] = 1.0;
+                channelGainTable[i] = 0.8; // default
             }
             this.noteOnTable = noteOnTable;
             this.noteOnKeyTable = noteOnKeyTable;
             this.noteOnGainTable = noteOnGainTable;
             this.pitchBendTable = pitchBendTable;
+            this.channelGainTable = channelGainTable;
             this.makeMusicScale();
         },
         connectNode: function(nChannel, nMultiplex) {
@@ -74,6 +79,7 @@
                     var osc = audioctx.createOscillator();
                     var gain = audioctx.createGainNode();
                     gain.gain.value = 0;
+//                    osc.type = 0; // "sine";
                     osc.type = 3; // "triangle";
 //                    osc2.connect(osc.frequency);
 //                    osc3.connect(gain.gain);
@@ -110,13 +116,14 @@
         },
         // method
         changeProgram: function(channel, program) {
-
             if (program in WAGeneratorProgramTable) {
-                var type = WAGeneratorProgramTable[program];
-                console.log("type:"+type);
+                var type = WAGeneratorProgramTable[program].type;
+                var gain = WAGeneratorProgramTable[program].gain;
+                console.log("type:"+type+",gain:"+gain);
                 for (var i = 0 ; i < this.nMultiplex ; i++) {
                     this.oscTable[channel][i].type = type;
                 }
+                this.channelGainTable[channel] = gain;
             } else {
                 console.log("programChange: "+channel+", "+program+")");
             }
@@ -138,7 +145,7 @@
             var noteOnTableChannel = this.noteOnTable[channel];
             var bend = this.pitchBendTable[channel];
             var freq = this.musicScaleTable[key] * bend;
-            var gain = velocity/0x100 * this.gainScale;
+            var gain = velocity/0x100 * this.gainScale * this.channelGainTable[channel];
             var prevKey = this.noteOnKeyTable[channel][i]
             var prevFreq = this.musicScaleTable[prevKey] * bend;
             noteOnTableChannel[i] = key;
