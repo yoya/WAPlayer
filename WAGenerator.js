@@ -18,6 +18,9 @@
     }
     var WAGenerator = function() {
         this.audioctx = new webkitAudioContext();
+        console.log(this.audioctx.sampleRate);
+        this.audioctx.sampleRate = 22050;
+        console.log(this.audioctx.sampleRate);
         this.oscTable = [];
 //        this.osc2Table = [];
 //        this.osc3Table = [];
@@ -33,16 +36,17 @@
         this.gain2Scale = 1.0;
     }
     WAGenerator.prototype = {
-        setup: function(nChannel, nMultiplex) {
+        setup: function(nChannel, nMultiplexTable) {
             this.nChannel = nChannel;
-            this.nMultiplex = nMultiplex;
-            this.connectNode(nChannel, nMultiplex);
+            this.nMultiplexTable = nMultiplexTable;
+            this.connectNode(nChannel, nMultiplexTable);
             var noteOnTable = new Array(nChannel);
             var noteOnKeyTable = new Array(nChannel);
             var noteOnGainTable = new Array(nChannel);
             var pitchBendTable = new Float32Array(nChannel);
             var channelGainTable = new Float32Array(nChannel);
             for (var i = 0 ; i < nChannel ; i++) {
+                var nMultiplex = nMultiplexTable[i];
                 noteOnTable[i] = new Array(nMultiplex);
                 noteOnKeyTable[i] = new Array(nMultiplex);
                 noteOnGainTable[i] = new Array(nMultiplex);
@@ -61,7 +65,7 @@
             this.channelGainTable = channelGainTable;
             this.makeMusicScale();
         },
-        connectNode: function(nChannel, nMultiplex) {
+        connectNode: function(nChannel, nMultiplexTable) {
             var audioctx = this.audioctx;
             this.oscTable = new Array(nChannel);
 //            this.osc2Table = new Array(nChannel);
@@ -73,6 +77,7 @@
             for (var i = 0 ; i < nChannel ; i++) {
 //                var osc2 = audioctx.createOscillator();
 //                var osc3 = audioctx.createOscillator();
+                var nMultiplex = nMultiplexTable[i];
                 this.oscTable[i] = new Array(nMultiplex);
                 this.gainTable[i] = new Array(nMultiplex);
                 for (var j = 0 ; j < nMultiplex ; j++) {
@@ -107,7 +112,8 @@
         },
         ready: function() { // from button/touen event
             for (var i = 0 ; i < this.nChannel ; i++) {
-                for (var j = 0 ; j < this.nMultiplex ; j++) {
+                var nMultiplex = this.nMultiplexTable[i];
+                for (var j = 0 ; j < nMultiplex ; j++) {
                     this.oscTable[i][j].noteOn(0);
                 }
 //                this.osc2Table[i].noteOn(0);
@@ -120,19 +126,21 @@
                 var type = WAGeneratorProgramTable[program].type;
                 var gain = WAGeneratorProgramTable[program].gain;
                 console.log("type:"+type+",gain:"+gain);
-                for (var i = 0 ; i < this.nMultiplex ; i++) {
+                var nMultiplex = this.nMultiplexTable[i];
+                for (var i = 0 ; i < nMultiplex ; i++) {
                     this.oscTable[channel][i].type = type;
                 }
                 this.channelGainTable[channel] = gain;
             } else {
-                console.log("programChange: "+channel+", "+program+")");
+                console.log("programChange: ("+channel+", "+program+")");
             }
         },
         pitchBend: function(targetTime, channel, value) {
             var noteOnTableChannel = this.noteOnTable[channel];
             var bend = Math.pow(2, (value/0x2000)/12);
             this.pitchBendTable[channel] = bend;
-            for (var i = 0 ; i < this.nMultiplex ; i++) {
+            var nMultiplex = this.nMultiplexTable[i];
+            for (var i = 0 ; i < nMultiplex ; i++) {
                 if (noteOnTableChannel[i] !== null) {
                     var key = this.noteOnKeyTable[channel][i];
                     var freq = this.musicScaleTable[key];
@@ -167,16 +175,17 @@
             }
 //            console.log("noteOn:"+targetTime+ ", key:"+key);
             var noteOnTableChannel = this.noteOnTable[channel];
-            for (var i = 0 ; i < this.nMultiplex ; i++) {
-                if (noteOnTableChannel[i] === null) {
+            var nMultiplex = this.nMultiplexTable[channel];
+            for (var i = 0 ; i < nMultiplex ; i++) {
+                if (noteOnTableChannel[channel] === null) {
                     this.noteOn2(targetTime, channel, i, key, velocity);
                     return true; // OK
                 }
             }
             console.warn("noteOn return false");
-            var i = this.nMultiplex - 1;
-            if (this.nMultiplex > 2) {
-                i = this.nMultiplex - 2;
+            var i = nMultiplex - 1;
+            if (nMultiplex > 2) {
+                i = nMultiplex - 2;
             }
             this.noteOn2(targetTime, channel, i, key, velocity);
             return false; // NG;
@@ -184,7 +193,8 @@
         noteOff: function(targetTime, channel, key, velocity) {
 //            console.log("noteOff:"+targetTime+", key:"+key);
             var noteOnTableChannel = this.noteOnTable[channel];
-            for (var i = 0 ; i < this.nMultiplex ; i++) {
+            var nMultiplex = this.nMultiplexTable[channel];
+            for (var i = 0 ; i < nMultiplex ; i++) {
                 if (noteOnTableChannel[i] === key) {
                     noteOnTableChannel[i] = null;
                     this.gainTable[channel][i].gain.linearRampToValueAtTime(this.noteOnGainTable[channel][i], targetTime - 0.05);
@@ -197,7 +207,8 @@
         noteOffAll: function(targetTime) {
             for (var channel = 0 ; i < this.nChannel ; channel++) {
                 var noteOnTableChannel = this.noteOnTable[channel];
-                for (var i = 0 ; i < this.nMultiplex ; i++) {
+                var nMultiplex = this.nMultiplexTable[i];
+                for (var i = 0 ; i < nMultiplex ; i++) {
                     if (noteOnTableChannel[i] !== null) {
                         noteOnTableChannel[i] = null;
                         this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime);
@@ -208,11 +219,11 @@
         },
         stop: function() {
             var nChannel = this.nChannel;
-            var nMultiplex = this.nMultiplex;
             var oscTable = this.oscTable;
             var gainTable = this.gainTable;
             var noteOnTable = this.noteOnTable;
             for (var i = 0 ; i < nChannel ; i++) {
+                var nMultiplex = this.nMultiplexTable[i];
                 for (var j = 0 ; j < nMultiplex ; j++) {
                     gainTable[i][j].gain.cancelScheduledValues(0);
                     oscTable[i][j].frequency.cancelScheduledValues(0);

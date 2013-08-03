@@ -11,8 +11,12 @@
         this.sequence = [];
         this.audioctx = new webkitAudioContext();
         this.track = [];
+        this.multiplexMax = 4;
     }
     WAPlayer.prototype = {
+        setMultiplexMax: function(multiplexMax) {
+            this.multiplexMax = multiplexMax;
+        },
         input: function(smf) {
             this.smf = smf;
             var tracks = smf.tracks;
@@ -37,6 +41,33 @@
                   function(a, b) { return (a['time']<b['time'])?-1:((a['time']==b['time'])?0:1); }
             );
             this.track = sortedTrack;
+
+            // get MultiplexMaxTable
+            var nChannel = smf.maxChannel + 1;
+            console.debug(nChannel);
+            var multiplexTable = new Uint8Array(nChannel);
+            var multiplexMaxTable = new Uint8Array(nChannel);
+            for (var i = 0, n = sortedTrack.length; i < n ; i++) {
+                var chunk = sortedTrack[i];
+                var channel = chunk['channel'];
+                if (chunk['type'] == 8) { // NoteOff
+                    multiplexTable[channel]--;
+                } else if (chunk['type'] == 9) { // NoteOn
+                    multiplexTable[channel]++;
+                    if (multiplexMaxTable[channel] < multiplexTable[channel]) {
+                        multiplexMaxTable[channel] = multiplexTable[channel];
+                    }
+                }
+            }
+            // limit
+            console.log(multiplexMaxTable);
+            for (var i = 0; i < nChannel ; i++) {
+                if (this.multiplexMax < multiplexMaxTable[i]) {
+                    multiplexMaxTable[i] = this.multiplexMax;
+                }
+            }
+            console.log(multiplexMaxTable);
+            this.gen.setup(nChannel, multiplexMaxTable);
         },
         play: function() {
             var header = this.smf.header;

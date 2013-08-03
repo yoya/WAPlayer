@@ -50,9 +50,7 @@ function setup() {
             var smf = new SMF();
             smf.input(xhr.response);
             console.debug(smf);
-            var nChannel = smf.maxChannel + 1;
-            var nMultiplex = 3;
-            gen.setup(nChannel, nMultiplex);
+            player.setMultiplexMax(3);
             player.input(smf);
             statusAppend(" => setup DONE");
         }
