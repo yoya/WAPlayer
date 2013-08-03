@@ -126,7 +126,7 @@
                 var type = WAGeneratorProgramTable[program].type;
                 var gain = WAGeneratorProgramTable[program].gain;
                 console.log("type:"+type+",gain:"+gain);
-                var nMultiplex = this.nMultiplexTable[i];
+                var nMultiplex = this.nMultiplexTable[channel];
                 for (var i = 0 ; i < nMultiplex ; i++) {
                     this.oscTable[channel][i].type = type;
                 }
@@ -139,7 +139,7 @@
             var noteOnTableChannel = this.noteOnTable[channel];
             var bend = Math.pow(2, (value/0x2000)/12);
             this.pitchBendTable[channel] = bend;
-            var nMultiplex = this.nMultiplexTable[i];
+            var nMultiplex = this.nMultiplexTable[channel];
             for (var i = 0 ; i < nMultiplex ; i++) {
                 if (noteOnTableChannel[i] !== null) {
                     var key = this.noteOnKeyTable[channel][i];
@@ -183,9 +183,13 @@
                 }
             }
             console.warn("noteOn return false");
-            var i = nMultiplex - 1;
-            if (nMultiplex > 2) {
-                i = nMultiplex - 2;
+            var i = 0;
+            if (nMultiplex > 1) {
+                if (nMultiplex > 2) {
+                    i = nMultiplex - 2;
+                } else {
+                    i = nMultiplex - 1;
+                }
             }
             this.noteOn2(targetTime, channel, i, key, velocity);
             return false; // NG;
