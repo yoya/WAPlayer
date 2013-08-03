@@ -10,12 +10,19 @@
 
 <button id="startbutton" onClick ="start()"> start </button>
 <button id="stopbutton" onClick ="stop()"> stop </button>
+<span id="status"> status </span>
 
 <script type="text/javascript" src="bin.js"> </script>
 <script type="text/javascript" src="SMF.js"> </script>
 <script type="text/javascript" src="WAPlayer.js"> </script>
 <script type="text/javascript" src="WAGenerator.js"> </script>
 <script type="text/javascript">
+
+function status(mesg) {
+    var status = document.getElementById("status");
+    status.innerHTML = mesg;
+}
+
 var gen = new WAGenerator();
 var player = new WAPlayer(gen);
 
@@ -27,20 +34,22 @@ function setup() {
     var url = location.search.substr(1).split("&")[0];
     url = (url?url:"akatomb.mid");
 //
+    status("midi loading :"+url);
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
         if (xhr.readyState > 3) {
-            if (xhr.status == 200) {
-               console.debug("midi loading done:"+xhr.response.byteLength);
-               var smf = new SMF();
-               smf.input(xhr.response);
-               console.debug(smf);
-               var nChannel = smf.maxChannel + 1;
-               var nMultiplex = 3;
-               gen.setup(nChannel, nMultiplex);
-               player.input(smf);
-//
+            if (xhr.status != 200) {
+                status("xhr status:"+xhr.status+", "+url);
+                return -1; // Failure;
             }
+            status("midi loading DONE:"+xhr.response.byteLength);
+            var smf = new SMF();
+            smf.input(xhr.response);
+            console.debug(smf);
+            var nChannel = smf.maxChannel + 1;
+            var nMultiplex = 3;
+            gen.setup(nChannel, nMultiplex);
+            player.input(smf);
         }
     };
     xhr.open('GET', url);
@@ -50,13 +59,13 @@ function setup() {
 }
 
 function start() {
-    console.debug("function start()");
+    status("ready and start");
     gen.ready();
     player.play();
 }
 
 function stop() {
-    console.debug("function stop()");
+    status("stop");
     player.stop();
 }
 
