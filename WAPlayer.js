@@ -47,16 +47,29 @@
             console.debug(nChannel);
             var multiplexTable = new Uint8Array(nChannel);
             var multiplexMaxTable = new Uint8Array(nChannel);
+            var noteOnTable = new Array(nChannel);
+            for (var i = 0, n = nChannel; i < n ; i++) {
+                noteOnTable[i] = new Uint8Array(128);
+            }
             for (var i = 0, n = sortedTrack.length; i < n ; i++) {
                 var chunk = sortedTrack[i];
-                var channel = chunk['channel'];
-                if (chunk['type'] == 8) { // NoteOff
-                    multiplexTable[channel]--;
-                } else if (chunk['type'] == 9) { // NoteOn
-                    multiplexTable[channel]++;
-                    if (multiplexMaxTable[channel] < multiplexTable[channel]) {
-                        multiplexMaxTable[channel] = multiplexTable[channel];
+                var channel  = chunk['channel'];
+                var type     = chunk['type'];
+                var note     = chunk['note'];
+                var velocity = chunk['velocity'];
+                if ((type == 9) && (velocity > 0)) { // type:9 note on
+                    if (noteOnTable[channel][note] == 0) {
+                        noteOnTable[channel][note] = 1;
+                        multiplexTable[channel]++;
+                        if (multiplexMaxTable[channel] < multiplexTable[channel]) {
+                            multiplexMaxTable[channel] = multiplexTable[channel];
+                        }
                     }
+                } else if ((type == 8) || (type == 9)) { // type:8 note off
+                    if (multiplexTable[channel] > 0) {
+                        multiplexTable[channel]--;
+                    }
+                    noteOnTable[channel][note] = 0;
                 }
             }
             // limit
@@ -77,7 +90,7 @@
             var prevTime = 0;
             var targetTime = gen.audioctx.currentTime; 
             for (var j = 0, m = this.track.length; j < m ; j++) {
-                    var chunk = this.track[j];
+                var chunk = this.track[j];
 //                    console.log(chunk);
                 var delta = chunk['time'] - prevTime;
                 prevTime = chunk['time'];
@@ -104,7 +117,7 @@
                         switch (chunk['metatype']) {
                         case 0x51: // Tempo Setting
                             tempo = chunk['tempo'] / 1000000; //usec => sec
-                            console.log(tempo);
+//                            console.debug('tempo:'+tempo);
                             break;
                         case 0x2F: // End of Track
                             gen.noteOffAll(targetTime);
@@ -120,6 +133,7 @@
                     break;
                 }
             }
+            gen.noteOffAll(targetTime+1); // failsafe
         },
         stop: function() {
             this.gen.stop();
