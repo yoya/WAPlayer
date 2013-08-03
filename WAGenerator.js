@@ -78,8 +78,8 @@
             this.gainTable = new Array(nChannel);
             this.gainMaster = audioctx.createGainNode();
             this.gainMaster.gain.value = this.gainMasterScale;
-//            this.gainScale = 1/Math.sqrt(nChannel); // XXX
-            this.gainScale = 1;
+            this.gainScale = 2/Math.sqrt(nChannel); // XXX
+//            this.gainScale = 1;
             for (var i = 0 ; i < nChannel ; i++) {
                 var osc2 = audioctx.createOscillator();
                 var gain2 = audioctx.createGainNode();
