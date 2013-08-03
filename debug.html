@@ -22,6 +22,10 @@ function status(mesg) {
     var status = document.getElementById("status");
     status.innerHTML = mesg;
 }
+function statusAppend(mesg) {
+    var status = document.getElementById("status");
+    status.innerHTML += mesg;
+}
 
 var gen = new WAGenerator();
 var player = new WAPlayer(gen);
@@ -50,6 +54,7 @@ function setup() {
             var nMultiplex = 3;
             gen.setup(nChannel, nMultiplex);
             player.input(smf);
+            statusAppend(" => setup DONE");
         }
     };
     xhr.open('GET', url);
