@@ -11,7 +11,7 @@
         46:{type:0, gain:1.0, decay:10}, // pizzicato strings
         47:{type:0, gain:1.0, decay:1}, // harp
 //        48:{type:3, gain:0.7, decay:1}, // Timpani XXX
-        48:{type:1, gain:0.2, decay:1}, // Timpani XXX
+        48:{type:2, gain:0.3, decay:1}, // Timpani XXX
         57:{type:1, gain:0.2, decay:0}, // trunpet
         58:{type:1, gain:0.2, decay:0}, // trumbone
         60:{type:1, gain:0.2, decay:0}, // muted trunpet
@@ -71,16 +71,20 @@
         connectNode: function(nChannel, nMultiplexTable) {
             var audioctx = this.audioctx;
             this.oscTable = new Array(nChannel);
-//            this.osc2Table = new Array(nChannel);
-//            this.osc3Table = new Array(nChannel);
+            this.osc2Table = new Array(nChannel);
+            this.gain2Table = new Array(nChannel);
+            this.osc3Table = new Array(nChannel);
+            this.gain3Table = new Array(nChannel);
             this.gainTable = new Array(nChannel);
             this.gainMaster = audioctx.createGainNode();
             this.gainMaster.gain.value = this.gainMasterScale;
 //            this.gainScale = 1/Math.sqrt(nChannel); // XXX
             this.gainScale = 1;
             for (var i = 0 ; i < nChannel ; i++) {
-//                var osc2 = audioctx.createOscillator();
-//                var osc3 = audioctx.createOscillator();
+                var osc2 = audioctx.createOscillator();
+                var gain2 = audioctx.createGainNode();
+                var osc3 = audioctx.createOscillator();
+                var gain3 = audioctx.createGainNode();
                 var nMultiplex = nMultiplexTable[i];
                 this.oscTable[i] = new Array(nMultiplex);
                 this.gainTable[i] = new Array(nMultiplex);
@@ -90,15 +94,26 @@
                     gain.gain.value = 0;
 //                    osc.type = 0; // "sine";
                     osc.type = 3; // "triangle";
-//                    osc2.connect(osc.frequency);
-//                    osc3.connect(gain.gain);
+/*
+                    osc2.connect(gain2);
+                    gain2.connect(osc.frequency);
+                    osc2.frequency.value = 5;
+                    gain2.gain.value = 1;
+*/
+/*
+                    osc3.connect(gain3);
+                    gain3.connect(gain);
+                    osc3.frequency.value = 5;
+                    gain3.gain.value = 1;
+*/
+//
                     osc.connect(gain);
                     gain.connect(this.gainMaster);
                     this.oscTable[i][j] = osc;
                     this.gainTable[i][j] = gain;
                 }
-//                this.osc2Table[i] = osc2;
-//                this.osc3Table[i] = osc3;
+                this.osc2Table[i] = osc2;
+                this.osc3Table[i] = osc3;
             }
             this.gainMaster.connect(audioctx.destination);
         },
@@ -120,8 +135,10 @@
                 for (var j = 0 ; j < nMultiplex ; j++) {
                     this.oscTable[i][j].noteOn(0);
                 }
-//                this.osc2Table[i].noteOn(0);
-//                this.osc3Table[i].noteOn(0);
+                if (i == 1) {
+//                    this.osc2Table[i].noteOn(0);
+//                    this.osc3Table[i].noteOn(0);
+                }
             }
         },
         // method
@@ -129,7 +146,7 @@
             if (program in WAGeneratorProgramTable) {
                 var type = WAGeneratorProgramTable[program].type;
                 var gain = WAGeneratorProgramTable[program].gain;
-                console.log("type:"+type+",gain:"+gain);
+//                console.debug("type:"+type+",gain:"+gain);
                 var nMultiplex = this.nMultiplexTable[channel];
                 for (var i = 0 ; i < nMultiplex ; i++) {
                     this.oscTable[channel][i].type = type;
