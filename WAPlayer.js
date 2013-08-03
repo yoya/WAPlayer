@@ -44,7 +44,6 @@
 
             // get MultiplexMaxTable
             var nChannel = smf.maxChannel + 1;
-            console.debug(nChannel);
             var multiplexTable = new Uint8Array(nChannel);
             var multiplexMaxTable = new Uint8Array(nChannel);
             var noteOnTable = new Array(nChannel);
