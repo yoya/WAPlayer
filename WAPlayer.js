@@ -33,7 +33,8 @@
                 mergedTrack = mergedTrack.concat(tracks[i]);
             }
             var sortedTrack = mergedTrack.sort(
-                function(a, b) { return (a['time']<b['time'])?-1:1; }
+//                function(a, b) { return (a['time']<b['time'])?-1:1; }
+                  function(a, b) { return (a['time']<b['time'])?-1:((a['time']==b['time'])?0:1); }
             );
             this.track = sortedTrack;
         },
