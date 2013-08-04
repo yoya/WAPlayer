@@ -21,9 +21,6 @@
     }
     var WAGenerator = function() {
         this.audioctx = new webkitAudioContext();
-        console.log(this.audioctx.sampleRate);
-        this.audioctx.sampleRate = 22050;
-        console.log(this.audioctx.sampleRate);
         this.oscTable = [];
 //        this.osc2Table = [];
 //        this.osc3Table = [];
