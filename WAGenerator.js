@@ -30,6 +30,7 @@
         this.musicScaleTable = [];
         this.pitchBendTable = [];
         this.noteOnKeyTable = [];
+        this.noteOnTimeTable = [];
         this.noteOnGainTable = [];
         this.channelGainTable = [];
         this.gainScale = 1.0
@@ -45,6 +46,7 @@
             var noteOnGainTable = new Array(nChannel);
             var pitchBendTable = new Float32Array(nChannel);
             var channelGainTable = new Float32Array(nChannel);
+            var noteOnTimeTable = new Array(nChannel);
             for (var i = 0 ; i < nChannel ; i++) {
                 var nMultiplex = nMultiplexTable[i];
                 noteOnTable[i] = new Array(nMultiplex);
@@ -55,6 +57,7 @@
                     noteOnKeyTable[i][j] = 0;
                     noteOnGainTable[i][j] = 0;
                 }
+                noteOnTimeTable[i] = new Uint8Array(nMultiplex);
                 pitchBendTable[i] = 1.0;
                 channelGainTable[i] = 0.7; // default
             }
@@ -63,6 +66,7 @@
             this.noteOnGainTable = noteOnGainTable;
             this.pitchBendTable = pitchBendTable;
             this.channelGainTable = channelGainTable;
+            this.noteOnTimeTable = noteOnTimeTable;
             this.makeMusicScale();
         },
         connectNode: function(nChannel, nMultiplexTable) {
@@ -128,6 +132,9 @@
         },
         ready: function() { // from button/touen event
             for (var i = 0 ; i < this.nChannel ; i++) {
+                if (i == 9) { // percussion part
+                    continue; // NOW ignore!! sorry!!!
+                }
                 var nMultiplex = this.nMultiplexTable[i];
                 for (var j = 0 ; j < nMultiplex ; j++) {
                     this.oscTable[i][j].noteOn(0);
@@ -187,6 +194,7 @@
             this.noteOnKeyTable[channel][i] = key;
             this.noteOnGainTable[channel][i] = gain;
             noteOnTableChannel[i] = key;
+            this.noteOnTimeTable[channel][i] = targetTime;
         },
         noteOn: function(targetTime, channel, key, velocity) {
             if (velocity === 0) {
@@ -207,15 +215,15 @@
                     return true; // OK
                 }
             }
-            var i = 0;
-            if (nMultiplex > 1) {
-                if (nMultiplex > 2) {
-                    i = nMultiplex - 2;
-                } else {
-                    i = nMultiplex - 1;
+            var i = 0, j = 0;
+            var firstTime = Number.MAX_VALUE;
+            for (var i = 0 ; i < nMultiplex ; i++) {
+                if (firstTime > this.noteOnTimeTable[channel][i]) {
+                    firstTime = this.noteOnTimeTable[channel][i];
+                    j = i;
                 }
             }
-            this.noteOn2(targetTime, channel, i, key, velocity);
+            this.noteOn2(targetTime, channel, j, key, velocity);
             console.warn("noteOn return false");
             return false; // NG;
         },
@@ -228,7 +236,7 @@
                     noteOnTableChannel[i] = null;
                     this.gainTable[channel][i].gain.linearRampToValueAtTime(this.noteOnGainTable[channel][i], targetTime - 0.05);
                     this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime);
-                    return true; // OK
+//                    return true; // OK
                 }
             }
 //            console.warn("noteOff return false");
