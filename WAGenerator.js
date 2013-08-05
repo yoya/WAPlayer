@@ -11,13 +11,13 @@
         46:{type:0, gain:1.0, decay:10}, // pizzicato strings
         47:{type:0, gain:1.0, decay:1}, // harp
 //        48:{type:3, gain:0.7, decay:1}, // Timpani XXX
-        48:{type:2, gain:0.3, decay:1}, // Timpani XXX
+        48:{type:2, gain:0.2, decay:1}, // Timpani XXX
         57:{type:1, gain:0.2, decay:0}, // trunpet
         58:{type:1, gain:0.2, decay:0}, // trumbone
         60:{type:1, gain:0.2, decay:0}, // muted trunpet
         68:{type:3, gain:0.7, decay:0}, // oboe
         73:{type:3, gain:0.5, decay:0}, // flute
-        88:{type:2, gain:0.3, decay:0}, // base
+        88:{type:2, gain:0.2, decay:0}, // base
     }
     var WAGenerator = function() {
         this.audioctx = new webkitAudioContext();
