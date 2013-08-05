@@ -16,7 +16,7 @@
         58:{type:1, gain:0.2, decay:0}, // trumbone
         60:{type:1, gain:0.2, decay:0}, // muted trunpet
         68:{type:3, gain:0.7, decay:0}, // oboe
-        73:{type:3, gain:0.5, decay:0}, // flute
+        73:{type:3, gain:0.7, decay:0}, // flute
         88:{type:2, gain:0.2, decay:0}, // base
     }
     var WAGenerator = function() {
@@ -56,7 +56,7 @@
                     noteOnGainTable[i][j] = 0;
                 }
                 pitchBendTable[i] = 1.0;
-                channelGainTable[i] = 0.2; // default
+                channelGainTable[i] = 0.7; // default
             }
             this.noteOnTable = noteOnTable;
             this.noteOnKeyTable = noteOnKeyTable;
