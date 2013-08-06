@@ -181,7 +181,7 @@
             var gain = velocity/0x100 * this.gainScale * this.channelGainTable[channel];
             var prevKey = this.noteOnKeyTable[channel][i]
             var prevFreq = this.musicScaleTable[prevKey] * bend;
-            this.oscTable[channel][i].frequency.cancelScheduledValues(targetTime);
+//            this.oscTable[channel][i].frequency.cancelScheduledValues(targetTime);
             if (prevFreq) {
                 this.oscTable[channel][i].frequency.setValueAtTime(prevFreq, targetTime-0.01);
                 this.oscTable[channel][i].frequency.linearRampToValueAtTime(freq, targetTime);
@@ -189,7 +189,7 @@
                 this.oscTable[channel][i].frequency.setValueAtTime(freq, targetTime); 
             }
             
-            this.gainTable[channel][i].gain.cancelScheduledValues(targetTime);
+//            this.gainTable[channel][i].gain.cancelScheduledValues(targetTime);
             if (noteOnTableChannel[i] != key) {
 
                 this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime-0.005);
@@ -225,7 +225,7 @@
             for (var i = 0 ; i < nMultiplex ; i++) {
                 if (noteOnTableChannel[i] === key) {
                     noteOnTableChannel[i] = null;
-                    this.gainTable[channel][i].gain.cancelScheduledValues(targetTime);
+//                    this.gainTable[channel][i].gain.cancelScheduledValues(targetTime);
                     this.gainTable[channel][i].gain.linearRampToValueAtTime(this.noteOnGainTable[channel][i], targetTime - 0.05);
                     this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime);
 //                    return true; // OK
