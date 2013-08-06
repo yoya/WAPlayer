@@ -119,7 +119,7 @@
         },
         makeMusicScale: function() {
             var musicScaleTable = new Float32Array(128);
-            var root12 = Math.pow(2, 1/6);
+            var root12 = Math.pow(2, 1/12);
             musicScaleTable[69] = 440; // [Hz] A4
             for (var i = 69 ; i < 127; i++) {
                 musicScaleTable[i + 1] = musicScaleTable[i] * root12;
@@ -162,7 +162,7 @@
         },
         pitchBend: function(targetTime, channel, value) {
             var noteOnTableChannel = this.noteOnTable[channel];
-            var bend = Math.pow(2, (value/0x2000)/12);
+            var bend = Math.pow(2, (value/0x2000)/6);
             this.pitchBendTable[channel] = bend;
             var nMultiplex = this.nMultiplexTable[channel];
             for (var i = 0 ; i < nMultiplex ; i++) {
