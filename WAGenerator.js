@@ -30,7 +30,7 @@
         this.musicScaleTable = [];
         this.pitchBendTable = [];
         this.noteOnKeyTable = [];
-        this.noteOnTimeTable = [];
+        this.noteOnNextIndex = [];
         this.noteOnGainTable = [];
         this.channelGainTable = [];
         this.gainScale = 1.0
@@ -46,7 +46,7 @@
             var noteOnGainTable = new Array(nChannel);
             var pitchBendTable = new Float32Array(nChannel);
             var channelGainTable = new Float32Array(nChannel);
-            var noteOnTimeTable = new Array(nChannel);
+            var noteOnNextIndex = new Uint8Array(nChannel);
             for (var i = 0 ; i < nChannel ; i++) {
                 var nMultiplex = nMultiplexTable[i];
                 noteOnTable[i] = new Array(nMultiplex);
@@ -57,7 +57,6 @@
                     noteOnKeyTable[i][j] = 0;
                     noteOnGainTable[i][j] = 0;
                 }
-                noteOnTimeTable[i] = new Uint8Array(nMultiplex);
                 pitchBendTable[i] = 1.0;
                 channelGainTable[i] = 0.7; // default
             }
@@ -66,7 +65,7 @@
             this.noteOnGainTable = noteOnGainTable;
             this.pitchBendTable = pitchBendTable;
             this.channelGainTable = channelGainTable;
-            this.noteOnTimeTable = noteOnTimeTable;
+            this.noteOnNextIndex = noteOnNextIndex;
             this.makeMusicScale();
         },
         connectNode: function(nChannel, nMultiplexTable) {
@@ -156,6 +155,7 @@
                     this.oscTable[channel][i].type = type;
                 }
                 this.channelGainTable[channel] = gain;
+                console.log(gain); // XXX
             } else {
                 console.log("programChange: ("+channel+", "+program+")");
             }
@@ -182,19 +182,22 @@
             var prevKey = this.noteOnKeyTable[channel][i]
             var prevFreq = this.musicScaleTable[prevKey] * bend;
             if (prevFreq) {
+                this.oscTable[channel][i].frequency.cancelScheduledValues(targetTime-0.01);
                 this.oscTable[channel][i].frequency.setValueAtTime(prevFreq, targetTime-0.01);
                 this.oscTable[channel][i].frequency.linearRampToValueAtTime(freq, targetTime);
             } else {
                 this.oscTable[channel][i].frequency.setValueAtTime(freq, targetTime); 
             }
+
             if (noteOnTableChannel[i] != key) {
+                this.gainTable[channel][i].gain.cancelScheduledValues(targetTime-0.005);
                 this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime-0.005);
             }
+            this.gainTable[channel][i].gain.cancelScheduledValues(targetTime+0.005);
             this.gainTable[channel][i].gain.linearRampToValueAtTime(gain, targetTime+0.005);
             this.noteOnKeyTable[channel][i] = key;
             this.noteOnGainTable[channel][i] = gain;
             noteOnTableChannel[i] = key;
-            this.noteOnTimeTable[channel][i] = targetTime;
         },
         noteOn: function(targetTime, channel, key, velocity) {
             if (velocity === 0) {
@@ -209,21 +212,9 @@
                     return true; // OK
                 }
             }
-            for (var i = 0 ; i < nMultiplex ; i++) {
-                if (noteOnTableChannel[i] === null) {
-                    this.noteOn2(targetTime, channel, i, key, velocity);
-                    return true; // OK
-                }
-            }
-            var i = 0, j = 0;
-            var firstTime = Number.MAX_VALUE;
-            for (var i = 0 ; i < nMultiplex ; i++) {
-                if (firstTime > this.noteOnTimeTable[channel][i]) {
-                    firstTime = this.noteOnTimeTable[channel][i];
-                    j = i;
-                }
-            }
-            this.noteOn2(targetTime, channel, j, key, velocity);
+            var noteOnNextIndex = this.noteOnNextIndex[channel];
+            this.noteOn2(targetTime, channel, noteOnNextIndex, key, velocity);
+            this.noteOnNextIndex[channel] = (noteOnNextIndex + 1) % nMultiplex;
             console.warn("noteOn return false");
             return false; // NG;
         },
@@ -234,6 +225,8 @@
             for (var i = 0 ; i < nMultiplex ; i++) {
                 if (noteOnTableChannel[i] === key) {
                     noteOnTableChannel[i] = null;
+                    
+                    this.gainTable[channel][i].gain.cancelScheduledValues(targetTime - 0.05);
                     this.gainTable[channel][i].gain.linearRampToValueAtTime(this.noteOnGainTable[channel][i], targetTime - 0.05);
                     this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime);
 //                    return true; // OK
