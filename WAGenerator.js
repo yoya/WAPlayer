@@ -119,7 +119,7 @@
         },
         makeMusicScale: function() {
             var musicScaleTable = new Float32Array(128);
-            var root12 = Math.pow(2, 1/12);
+            var root12 = Math.pow(2, 1/6);
             musicScaleTable[69] = 440; // [Hz] A4
             for (var i = 69 ; i < 127; i++) {
                 musicScaleTable[i + 1] = musicScaleTable[i] * root12;
