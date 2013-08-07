@@ -104,6 +104,16 @@
                 case 0x9: // Note On
                     gen.noteOn(targetTime, chunk['channel'], chunk['note'], chunk['velocity']);
                     break;
+                case 0xC: // Control Change
+                    switch(chunk['controller']) {
+                    case 7: // MainVolume
+                        gen.setControllerRegister(chunk['channel'], 7, chunk['volume']);
+                        break;
+                    case 11: // Expression
+                        gen.setControllerRegister(chunk['channel'], 11, chunk['expression']);
+                        break;
+                    }
+                    break;
                 case 0xC: // Program Change
                     gen.changeProgram(chunk['channel'], chunk['program']);
                     break;
