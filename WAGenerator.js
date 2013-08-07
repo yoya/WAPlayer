@@ -33,8 +33,9 @@
         this.noteOnNextIndex = [];
         this.noteOnGainTable = [];
         this.channelGainTable = [];
+        this.controllerRegister = [];
         this.gainScale = 1.0
-        this.gainMasterScale = 1.0;
+        this.gainMasterScaleUser = 1.0;
     }
     WAGenerator.prototype = {
         setup: function(nChannel, nMultiplexTable) {
@@ -67,6 +68,7 @@
             this.channelGainTable = channelGainTable;
             this.noteOnNextIndex = noteOnNextIndex;
             this.makeMusicScale();
+            this.makeControllerRegister(nChannel);
         },
         connectNode: function(nChannel, nMultiplexTable) {
             var audioctx = this.audioctx;
@@ -77,7 +79,7 @@
             this.gain3Table = new Array(nChannel);
             this.gainTable = new Array(nChannel);
             this.gainMaster = audioctx.createGainNode();
-            this.gainMaster.gain.value = this.gainMasterScale;
+            this.gainMaster.gain.value = this.gainMasterScaleUser;
             this.gainScale = 2/Math.sqrt(nChannel); // XXX
 //            this.gainScale = 1;
             for (var i = 0 ; i < nChannel ; i++) {
@@ -129,6 +131,22 @@
             }
             this.musicScaleTable = musicScaleTable;
         },
+        makeControllerRegister: function(nChannel) {
+            var controllerRegister = new Array(nChannel);
+            for (var i = 0 ; i < nChannel ; i++) {
+                controllerRegister[i] = new Array(127);
+                controllerRegister[i][7] = 100; // Main Volume
+                controllerRegister[i][11] = 100; // Expression
+            }
+            this.controllerRegister = controllerRegister;
+            
+        },
+        setControllerRegister: function(channel, type, value) {
+            this.controllerRegister[channel][type] = value;
+        },
+        getControllerRegister: function(channel, type) {
+            return this.controllerRegister[channel][type];
+        },
         ready: function() { // from button/touen event
             for (var i = 0 ; i < this.nChannel ; i++) {
                 if (i == 9) { // percussion part
@@ -178,8 +196,8 @@
             var noteOnTableChannel = this.noteOnTable[channel];
             var bend = this.pitchBendTable[channel];
             var freq = this.musicScaleTable[key] * bend;
-            var gain = velocity/0x100 * this.gainScale * this.channelGainTable[channel];
-            var prevKey = this.noteOnKeyTable[channel][i]
+            var gain = velocity/0x100 * this.gainScale * this.channelGainTable[channel] * this.getControllerRegister(channel, 7)/100 * this.getControllerRegister(channel, 11)/100;
+            var prevKey = this.noteOnKeyTable[channel][i];
             var prevFreq = this.musicScaleTable[prevKey] * bend;
 //            this.oscTable[channel][i].frequency.cancelScheduledValues(targetTime);
             if (prevFreq) {
