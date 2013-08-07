@@ -72,8 +72,27 @@
                         chunk['amount'] = bin.getUI8();
                         break;
                     case 0xB: // Control Change
-                        chunk['controller'] = bin.getUI8();
-                        chunk['value'] = bin.getUI8();
+                        var controller = bin.getUI8();
+                        chunk['controller'] = controller;
+                        switch (controller) {
+                        case 7: // MainVolume
+                            chunk['volume'] = bin.getUI8();
+                            break;
+                        case 11: // Expression
+                            chunk['expression'] = bin.getUI8();
+                            break;
+                        case 98: // NRPN LSB
+                        case 100: // RPN LSB
+                            chunk['lsb'] = bin.getUI8();
+                            break;                            
+                        case 99: // NRPN MSB
+                        case 101: // RPN MSB
+                            chunk['msb'] = bin.getUI8();
+                            break;
+                        default:
+                            chunk['value'] = bin.getUI8();
+                            break;
+                        }
                         break;
                     case 0xC: //  Program Change
                         chunk['program'] = bin.getUI8();
