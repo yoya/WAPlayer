@@ -1,6 +1,6 @@
 "use strict";
 /*
-  +----------------------------------------------------------------------+
+regi  +----------------------------------------------------------------------+
   | (c) 2013/08/01- yoya@awm.jp                                          |
   +----------------------------------------------------------------------+
 */
@@ -21,6 +21,7 @@
     }
     var WAGenerator = function() {
         this.audioctx = new webkitAudioContext();
+        this.cntl = null;
         this.oscTable = [];
 //        this.osc2Table = [];
 //        this.osc3Table = [];
@@ -33,7 +34,6 @@
         this.noteOnNextIndex = [];
         this.noteOnGainTable = [];
         this.channelGainTable = [];
-        this.controllerRegister = [];
         this.gainScale = 1.0
         this.gainMasterScaleUser = 1.0;
     }
@@ -68,7 +68,6 @@
             this.channelGainTable = channelGainTable;
             this.noteOnNextIndex = noteOnNextIndex;
             this.makeMusicScale();
-            this.makeControllerRegister(nChannel);
         },
         connectNode: function(nChannel, nMultiplexTable) {
             var audioctx = this.audioctx;
@@ -131,21 +130,8 @@
             }
             this.musicScaleTable = musicScaleTable;
         },
-        makeControllerRegister: function(nChannel) {
-            var controllerRegister = new Array(nChannel);
-            for (var i = 0 ; i < nChannel ; i++) {
-                controllerRegister[i] = new Array(127);
-                controllerRegister[i][7] = 100; // Main Volume
-                controllerRegister[i][11] = 100; // Expression
-            }
-            this.controllerRegister = controllerRegister;
-            
-        },
-        setControllerRegister: function(channel, type, value) {
-            this.controllerRegister[channel][type] = value;
-        },
-        getControllerRegister: function(channel, type) {
-            return this.controllerRegister[channel][type];
+        setController: function(cntl) {
+            this.cntl = cntl;
         },
         ready: function() { // from button/touen event
             for (var i = 0 ; i < this.nChannel ; i++) {
@@ -192,14 +178,22 @@
                 }
             }
         },
+        mainVolume: function(targetTime, channel, value) {
+            this.cntl.setParam(channel, 7, value);
+            //
+        },
+        expression: function(targetTime, channel, value) {
+            this.cntl.setParam(channel, 11, value);
+            //
+        },
         noteOn2: function(targetTime, channel, i, key, velocity) {
             var noteOnTableChannel = this.noteOnTable[channel];
             var bend = this.pitchBendTable[channel];
             var freq = this.musicScaleTable[key] * bend;
-            var gain = velocity/0x100 * this.gainScale * this.channelGainTable[channel] * this.getControllerRegister(channel, 7)/100 * this.getControllerRegister(channel, 11)/100;
+            var gain = velocity/0x100 * this.gainScale * this.channelGainTable[channel] * this.cntl.getParam(channel, 7)/100 * this.cntl.getParam(channel, 11)/100;
             var prevKey = this.noteOnKeyTable[channel][i];
             var prevFreq = this.musicScaleTable[prevKey] * bend;
-//            this.oscTable[channel][i].frequency.cancelScheduledValues(targetTime);
+            this.oscTable[channel][i].frequency.cancelScheduledValues(targetTime);
             if (prevFreq) {
                 this.oscTable[channel][i].frequency.setValueAtTime(prevFreq, targetTime-0.01);
                 this.oscTable[channel][i].frequency.linearRampToValueAtTime(freq, targetTime);
@@ -207,7 +201,7 @@
                 this.oscTable[channel][i].frequency.setValueAtTime(freq, targetTime); 
             }
             
-//            this.gainTable[channel][i].gain.cancelScheduledValues(targetTime);
+            this.gainTable[channel][i].gain.cancelScheduledValues(targetTime);
             if (noteOnTableChannel[i] != key) {
 
                 this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime-0.005);
@@ -233,8 +227,7 @@
             var noteOnNextIndex = this.noteOnNextIndex[channel];
             this.noteOn2(targetTime, channel, noteOnNextIndex, key, velocity);
             this.noteOnNextIndex[channel] = (noteOnNextIndex + 1) % nMultiplex;
-            console.warn("noteOn return false");
-            return false; // NG;
+            return true; // OK;
         },
         noteOff: function(targetTime, channel, key, velocity) {
 //            console.log("noteOff:"+targetTime+", key:"+key);
@@ -244,8 +237,8 @@
                 if (noteOnTableChannel[i] === key) {
                     noteOnTableChannel[i] = null;
 //                    this.gainTable[channel][i].gain.cancelScheduledValues(targetTime);
-                    this.gainTable[channel][i].gain.linearRampToValueAtTime(this.noteOnGainTable[channel][i], targetTime - 0.05);
-                    this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime);
+                    this.gainTable[channel][i].gain.linearRampToValueAtTime(this.noteOnGainTable[channel][i]*0.7, targetTime);
+                    this.gainTable[channel][i].gain.linearRampToValueAtTime(0, targetTime + 0.05);
 //                    return true; // OK
                 }
             }

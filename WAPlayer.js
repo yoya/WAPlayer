@@ -7,6 +7,7 @@
 (function() {
     var WAPlayer = function(gen) {
         this.gen = gen;
+        this.cntl = new WAController();
         this.smf = null;
         this.sequence = [];
         this.audioctx = new webkitAudioContext();
@@ -80,10 +81,14 @@
             }
             console.log(multiplexMaxTable);
             this.gen.setup(nChannel, multiplexMaxTable);
+            this.gen.setController(this.cntl);
+            this.cntl.setup(nChannel);
         },
         play: function() {
+            this.gen.stop(0); // XXX
             var header = this.smf.header;
             var gen = this.gen;
+            var cntl = this.cntl;
             var tempo = 0.5; // = 120
             var division = header.division;
             var prevTime = 0;
@@ -91,6 +96,7 @@
             for (var j = 0, m = this.track.length; j < m ; j++) {
                 var chunk = this.track[j];
 //                    console.log(chunk);
+                var channel = ('channel' in chunk)?chunk['channel']:null;
                 var delta = chunk['time'] - prevTime;
                 prevTime = chunk['time'];
                 if (delta > 0) {
@@ -99,26 +105,42 @@
                 var type  = chunk['type'];
                 switch (type) {
                 case 0x8: // Note Off
-                    gen.noteOff(targetTime, chunk['channel'], chunk['note'], chunk['velocity']);
+                    gen.noteOff(targetTime, channel, chunk['note'], chunk['velocity']);
                     break;
                 case 0x9: // Note On
-                    gen.noteOn(targetTime, chunk['channel'], chunk['note'], chunk['velocity']);
+                    gen.noteOn(targetTime, channel, chunk['note'], chunk['velocity']);
                     break;
                 case 0xC: // Control Change
                     switch(chunk['controller']) {
                     case 7: // MainVolume
-                        gen.setControllerRegister(chunk['channel'], 7, chunk['volume']);
+                        gen.mainVolume(chunk['time'],
+                                       channel, chunk['volume']);
+                        break;
+                    case 6: // MSB Value;
                         break;
                     case 11: // Expression
-                        gen.setControllerRegister(chunk['channel'], 11, chunk['expression']);
+                        gen.expression(chunk['time'],
+                                       channel, chunk['expression']);
+                        break;
+                    case 98: // NRPN LSB
+                        cntl.setNRPNType(channel, this.chunk['lsb']);
+                        break;
+                    case 99: // NRPN MSB
+                        cntl.setNRPNType(channel, this.chunk['msb']);
+                        break;
+                    case 100: // RPN LSB
+                        cntl.setRPNType(channel, this.chunk['lsb']);
+                        break;
+                    case 101: // RPN MSB
+                        cntl.setNRPNType(channel, this.chunk['msb']);
                         break;
                     }
                     break;
                 case 0xC: // Program Change
-                    gen.changeProgram(chunk['channel'], chunk['program']);
+                    gen.changeProgram(channel, chunk['program']);
                     break;
                 case 0xE: // Pitch Bend Event
-                    gen.pitchBend(targetTime, chunk['channel'], chunk['value']);
+                    gen.pitchBend(targetTime, channel, chunk['value']);
                     break;
                 case 0xF: // meta event | sysex
                     var type2 = chunk['type2'];
